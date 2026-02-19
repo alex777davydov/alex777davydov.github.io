@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AiMET — Not Swipes. Compatibility.</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#060912;--cyan:#00F5FF;--magenta:#FF00C8;--purple:#8A5CFF;--text:#E6F1FF;--muted:#8B9DC3;--green:#00FF9C}
+html{scroll-behavior:smooth;scroll-snap-type:y mandatory}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow-x:hidden;height:100vh;overflow-y:scroll}
+
+/* LAYERS */
+#cvs{position:fixed;inset:0;z-index:0;pointer-events:none}
+.grid-bg{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(0,245,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,245,255,.025) 1px,transparent 1px);
+  background-size:70px 70px;
+  animation:gridMove 40s linear infinite}
+@keyframes gridMove{to{background-position:70px 70px}}
+.scanlines{position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,10,.12) 3px,rgba(0,0,10,.12) 4px)}
+.vignette{position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 50%,rgba(6,9,18,.7) 100%)}
+
+/* LOGO */
+.logo{position:fixed;top:26px;left:50%;transform:translateX(-50%);z-index:300;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.2rem;letter-spacing:.25em;
+  background:linear-gradient(135deg,var(--cyan),var(--magenta));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:logoFloat 6s ease-in-out infinite;cursor:default;text-shadow:none}
+@keyframes logoFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-5px)}}
+.logo-glow{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:299;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.2rem;letter-spacing:.25em;
+  color:var(--cyan);filter:blur(12px);opacity:.35;animation:logoFloat 6s ease-in-out infinite;
+  white-space:nowrap;pointer-events:none}
+
+/* NAV DOTS */
+.dots{position:fixed;right:26px;top:50%;transform:translateY(-50%);z-index:300;display:flex;flex-direction:column;gap:10px}
+.dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.12);cursor:pointer;transition:.5s ease;position:relative}
+.dot::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:1px solid transparent;transition:.5s ease}
+.dot.active{background:var(--cyan);box-shadow:0 0 8px var(--cyan),0 0 20px rgba(0,245,255,.5)}
+.dot.active::after{border-color:rgba(0,245,255,.3)}
+
+/* SLIDE */
+.slide{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;z-index:10;scroll-snap-align:start;padding:100px 24px 60px;text-align:center;overflow:hidden}
+
+/* AMBIENT ORBS */
+.orb{position:absolute;border-radius:50%;pointer-events:none;filter:blur(90px);
+  animation:orbDrift 15s ease-in-out infinite alternate}
+@keyframes orbDrift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(40px,-40px) scale(1.2)}}
+
+/* CORNER DECO */
+.corner{position:absolute;width:60px;height:60px;pointer-events:none;opacity:.3}
+.corner-tl{top:24px;left:24px;border-top:1px solid var(--cyan);border-left:1px solid var(--cyan)}
+.corner-tr{top:24px;right:24px;border-top:1px solid var(--cyan);border-right:1px solid var(--cyan)}
+.corner-bl{bottom:24px;left:24px;border-bottom:1px solid var(--cyan);border-left:1px solid var(--cyan)}
+.corner-br{bottom:24px;right:24px;border-bottom:1px solid var(--cyan);border-right:1px solid var(--cyan)}
+
+/* GLITCH */
+@keyframes glitch{
+  0%,90%,100%{clip-path:none;transform:none;text-shadow:none}
+  91%{clip-path:inset(15% 0 60% 0);transform:translateX(-6px);text-shadow:4px 0 var(--magenta)}
+  93%{clip-path:inset(55% 0 15% 0);transform:translateX(6px);text-shadow:-4px 0 var(--cyan)}
+  95%{clip-path:inset(35% 0 35% 0);transform:translateX(-3px)}
+  97%{clip-path:none;transform:none}
+}
+.glitch{animation:glitch 8s ease-in-out infinite}
+
+/* EYEBROW */
+.eyebrow{font-size:.65rem;letter-spacing:.3em;color:var(--cyan);font-family:'Space Grotesk',sans-serif;
+  font-weight:400;text-transform:uppercase;margin-bottom:20px;opacity:0;
+  transition:opacity .8s ease,transform .8s ease;transform:translateY(14px);position:relative}
+.eyebrow::before,.eyebrow::after{content:'—';margin:0 8px;opacity:.5}
+.eyebrow.in{opacity:.9;transform:none}
+
+/* HEADLINE */
+.hl{font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:clamp(2.8rem,8vw,7.5rem);letter-spacing:-.01em;line-height:1.0;margin-bottom:18px;
+  opacity:0;transition:opacity .9s ease,transform .9s ease;transform:translateY(22px)}
+.hl.in{opacity:1;transform:none}
+.gc{background:linear-gradient(135deg,var(--text) 20%,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.gp{background:linear-gradient(135deg,var(--text) 20%,var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.gm{background:linear-gradient(135deg,var(--text) 20%,var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.gg{background:linear-gradient(135deg,var(--text) 20%,var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* GLOW HEADLINE SHADOW */
+.hl-c{filter:drop-shadow(0 0 30px rgba(0,245,255,.2))}
+.hl-m{filter:drop-shadow(0 0 30px rgba(255,0,200,.2))}
+.hl-p{filter:drop-shadow(0 0 30px rgba(138,92,255,.2))}
+.hl-g{filter:drop-shadow(0 0 30px rgba(0,255,156,.2))}
+
+/* TAGLINE */
+.tag{font-size:clamp(.9rem,2vw,1.1rem);color:var(--muted);font-weight:300;line-height:1.75;
+  max-width:440px;margin-bottom:44px;opacity:0;
+  transition:opacity .8s ease,transform .8s ease;transform:translateY(14px)}
+.tag.in{opacity:1;transform:none}
+
+/* BUTTONS */
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.88rem;letter-spacing:.14em;
+  padding:16px 44px;border-radius:60px;cursor:pointer;
+  text-decoration:none;display:inline-block;text-transform:uppercase;position:relative;overflow:hidden;
+  opacity:0;transition:opacity .8s ease,transform .8s ease,box-shadow .3s}
+.btn::before{content:'';position:absolute;inset:0;border-radius:60px;opacity:0;transition:.4s ease}
+.btn:hover::before{opacity:1}
+.btn.in{opacity:1;transform:none}
+.btn:hover{transform:translateY(-5px) scale(1.03)!important}
+
+.btn-c{background:linear-gradient(135deg,var(--cyan) 0%,var(--purple) 100%);color:#060912;border:none}
+.btn-c:hover{box-shadow:0 0 0 1px var(--cyan),0 16px 50px rgba(0,245,255,.4)}
+.btn-c::before{background:linear-gradient(135deg,rgba(255,255,255,.15),transparent)}
+
+.btn-p{background:transparent;color:var(--purple);border:1px solid rgba(138,92,255,.6)}
+.btn-p:hover{background:var(--purple);color:#060912;border-color:var(--purple);box-shadow:0 0 0 1px var(--purple),0 16px 50px rgba(138,92,255,.4)}
+
+.btn-m{background:linear-gradient(135deg,var(--magenta) 0%,var(--purple) 100%);color:#060912;border:none}
+.btn-m:hover{box-shadow:0 0 0 1px var(--magenta),0 16px 50px rgba(255,0,200,.4)}
+.btn-m::before{background:linear-gradient(135deg,rgba(255,255,255,.15),transparent)}
+
+.btn-g{background:transparent;color:var(--green);border:1px solid rgba(0,255,156,.5)}
+.btn-g:hover{background:var(--green);color:#060912;box-shadow:0 0 0 1px var(--green),0 16px 50px rgba(0,255,156,.35)}
+
+/* SLIDE NUM */
+.snum{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
+  font-size:.6rem;letter-spacing:.28em;color:rgba(139,157,195,.2);font-family:'Space Grotesk',sans-serif}
+
+/* FADE BASE */
+.rv{opacity:0;transform:translateY(20px);transition:opacity .8s ease,transform .8s ease}
+.rv.in{opacity:1;transform:none}
+
+/* STATS */
+.stats{display:flex;gap:0;justify-content:center;margin-bottom:44px}
+.stat{padding:0 36px;text-align:center;position:relative}
+.stat+.stat::before{content:'';position:absolute;left:0;top:10%;bottom:10%;width:1px;background:rgba(0,245,255,.1)}
+.sv{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(2rem,5vw,3.8rem);
+  background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sl{font-size:.65rem;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-top:6px}
+
+/* PROBLEM CARDS */
+.pcards{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:40px}
+.pc{background:rgba(255,0,200,.03);border:1px solid rgba(255,0,200,.1);border-radius:16px;
+  padding:26px 22px;max-width:210px;text-align:left;backdrop-filter:blur(24px);
+  transition:.4s ease;position:relative;overflow:hidden}
+.pc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,0,200,.5),transparent)}
+.pc:hover{transform:translateY(-6px);border-color:rgba(255,0,200,.4);box-shadow:0 20px 50px rgba(255,0,200,.1)}
+.pc-ico{font-size:1.6rem;margin-bottom:12px}
+.pc-t{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.78rem;letter-spacing:.1em;margin-bottom:8px}
+.pc-d{font-size:.78rem;color:var(--muted);line-height:1.55}
+
+/* FEATURE GRID */
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:700px;margin:0 auto 44px}
+.fc{background:rgba(255,255,255,.025);border:1px solid rgba(0,245,255,.07);border-radius:14px;
+  padding:20px 16px;text-align:left;backdrop-filter:blur(20px);transition:.4s ease;position:relative;overflow:hidden}
+.fc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,245,255,.3),transparent);transform:scaleX(0);transition:.4s}
+.fc:hover{transform:translateY(-5px);border-color:rgba(0,245,255,.2);box-shadow:0 14px 40px rgba(0,245,255,.07)}
+.fc:hover::after{transform:scaleX(1)}
+.fc-ico{font-size:1.4rem;margin-bottom:10px}
+.fc-t{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.75rem;letter-spacing:.1em;margin-bottom:5px}
+.fc-d{font-size:.73rem;color:var(--muted);line-height:1.5}
+
+/* INVESTOR */
+.icards{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+.ic{background:rgba(0,255,156,.025);border:1px solid rgba(0,255,156,.09);border-radius:16px;
+  padding:24px 20px;max-width:185px;text-align:left;backdrop-filter:blur(24px);transition:.4s ease;position:relative}
+.ic::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,156,.4),transparent)}
+.ic:hover{transform:translateY(-5px);border-color:rgba(0,255,156,.25);box-shadow:0 14px 40px rgba(0,255,156,.08)}
+.ic-n{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.6rem;
+  background:linear-gradient(135deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.ic-l{font-size:.76rem;color:var(--muted);line-height:1.5}
+.inv-note{font-size:.7rem;color:rgba(139,157,195,.35);letter-spacing:.14em;text-transform:uppercase;margin-bottom:36px}
+
+/* TIMELINE */
+.timeline{display:flex;gap:0;justify-content:center;align-items:flex-start;max-width:680px;margin:0 auto 44px;position:relative}
+.timeline::before{content:'';position:absolute;top:22px;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan),var(--magenta),transparent);opacity:.2}
+.tstep{flex:1;text-align:center;position:relative;z-index:1;padding:0 8px}
+.tnum{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  margin:0 auto 14px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));color:#060912;
+  box-shadow:0 0 20px rgba(0,245,255,.2)}
+.ttitle{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.72rem;letter-spacing:.1em;margin-bottom:6px}
+.tdesc{font-size:.7rem;color:var(--muted);line-height:1.5}
+
+/* VISION TEXT */
+.vision-q{font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:clamp(1.1rem,2.5vw,1.8rem);letter-spacing:.02em;line-height:1.5;
+  max-width:640px;margin:0 auto 44px;
+  background:linear-gradient(135deg,var(--text) 0%,var(--cyan) 50%,var(--magenta) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+@media(max-width:680px){
+  .fgrid{grid-template-columns:repeat(2,1fr)}
+  .stats{flex-wrap:wrap;gap:20px}
+  .stat+.stat::before{display:none}
+  .timeline{flex-wrap:wrap;gap:24px}
+  .timeline::before{display:none}
+  .dots{right:12px}
+}
+@media(max-width:400px){.fgrid{grid-template-columns:1fr}.pcards,.icards{flex-direction:column;align-items:center}}
+</style>
+</head>
+<body>
+
+<canvas id="cvs"></canvas>
+<div class="grid-bg"></div>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+
+<div class="logo">AiMET</div>
+<div class="logo-glow">AiMET</div>
+<div class="dots" id="dots"></div>
+
+<!-- ══ S1 HERO ══ -->
+<section class="slide" id="s0">
+  <div class="orb" style="width:560px;height:560px;background:rgba(0,245,255,.07);top:5%;left:-15%;animation-duration:14s"></div>
+  <div class="orb" style="width:420px;height:420px;background:rgba(255,0,200,.06);bottom:0;right:-10%;animation-duration:18s;animation-delay:-7s"></div>
+  <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+  <div class="eyebrow rv">знакомства переосмыслены</div>
+  <h1 class="hl hl-c gc glitch rv">Не свайпы.<br>Совместимость.</h1>
+  <p class="tag rv">Искусственный интеллект, который понимает тебя —<br>и находит того, кто действительно подходит.</p>
+  <a href="https://drive.google.com/file/d/1tBkga_ML_KdBbo7pUAjWnjKGVAqbGAGh/view?usp=sharing" target="_blank" class="btn btn-c rv">Начать путь</a>
+  <div class="snum">01 / 07</div>
+</section>
+
+<!-- ══ S2 PROBLEM ══ -->
+<section class="slide" id="s1">
+  <div class="orb" style="width:500px;height:500px;background:rgba(255,0,200,.07);top:50%;left:50%;transform:translate(-60%,-50%)"></div>
+  <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+  <div class="eyebrow rv">проблема</div>
+  <h2 class="hl hl-m gm rv" style="font-size:clamp(2rem,5vw,4.5rem)">Дейтинг<br>сломан</h2>
+  <div class="pcards rv">
+    <div class="pc"><div class="pc-ico">♾️</div><div class="pc-t">БЕСКОНЕЧНЫЕ СВАЙПЫ</div><p class="pc-d">Алгоритм создан удерживать, а не соединять</p></div>
+    <div class="pc"><div class="pc-ico">🪞</div><div class="pc-t">ИЛЛЮЗИЯ ВЫБОРА</div><p class="pc-d">Тысячи анкет. Ноль сигнала. Ты выбираешь фото</p></div>
+    <div class="pc"><div class="pc-ico">📉</div><div class="pc-t">НЕТ СОВМЕСТИМОСТИ</div><p class="pc-d">Поверхностный мэтчинг без глубины и контекста</p></div>
+  </div>
+  <div class="snum">02 / 07</div>
+</section>
+
+<!-- ══ S3 PRODUCT ══ -->
+<section class="slide" id="s2">
+  <div class="orb" style="width:480px;height:480px;background:rgba(138,92,255,.08);top:15%;right:-8%;animation-duration:16s"></div>
+  <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+  <div class="eyebrow rv">решение</div>
+  <h2 class="hl hl-p gp rv" style="font-size:clamp(2rem,5vw,4.5rem)">AiMET:<br>слой интеллекта</h2>
+  <div class="fgrid rv">
+    <div class="fc"><div class="fc-ico">🧠</div><div class="fc-t">AI АНАЛИЗ</div><p class="fc-d">Поведенческое профилирование на глубину</p></div>
+    <div class="fc"><div class="fc-ico">🎮</div><div class="fc-t">ИГРЫ</div><p class="fc-d">Личность раскрывается через геймплей</p></div>
+    <div class="fc"><div class="fc-ico">💬</div><div class="fc-t">УМНЫЕ ДИАЛОГИ</div><p class="fc-d">AI убирает светский разговор</p></div>
+    <div class="fc"><div class="fc-ico">🎭</div><div class="fc-t">ВИРТУАЛЬНЫЕ СВИДАНИЯ</div><p class="fc-d">Химия проверяется до встречи вживую</p></div>
+    <div class="fc"><div class="fc-ico">🔒</div><div class="fc-t">ПРИВАТНОСТЬ</div><p class="fc-d">Данные только твои. Никакой рекламы</p></div>
+    <div class="fc"><div class="fc-ico">💎</div><div class="fc-t">НАГРАДЫ</div><p class="fc-d">Глубина поощряется системой баллов</p></div>
+  </div>
+  <a href="https://drive.google.com/file/d/1tBkga_ML_KdBbo7pUAjWnjKGVAqbGAGh/view?usp=sharing" target="_blank" class="btn btn-p rv">Войти в будущее</a>
+  <div class="snum">03 / 07</div>
+</section>
+
+<!-- ══ S4 HOW ══ -->
+<section class="slide" id="s3">
+  <div class="orb" style="width:520px;height:520px;background:rgba(0,245,255,.05);top:50%;left:50%;transform:translate(-50%,-50%);animation-duration:20s"></div>
+  <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+  <div class="eyebrow rv">как это работает</div>
+  <h2 class="hl hl-c gc rv" style="font-size:clamp(1.8rem,4.5vw,4rem);margin-bottom:40px">Четыре шага<br>к настоящей связи</h2>
+  <div class="timeline rv">
+    <div class="tstep"><div class="tnum">1</div><div class="ttitle">АВАТАР</div><p class="tdesc">Создай AI-профиль — за пределами фото</p></div>
+    <div class="tstep"><div class="tnum">2</div><div class="ttitle">АНАЛИЗ</div><p class="tdesc">Модель изучает твои паттерны и ценности</p></div>
+    <div class="tstep"><div class="tnum">3</div><div class="ttitle">ИГРА</div><p class="tdesc">Сценарии раскрывают настоящую химию</p></div>
+    <div class="tstep"><div class="tnum">4</div><div class="ttitle">РЕАЛЬНОСТЬ</div><p class="tdesc">Встречаешь того, кого уже знаешь</p></div>
+  </div>
+  <div class="snum">04 / 07</div>
+</section>
+
+<!-- ══ S5 MARKET ══ -->
+<section class="slide" id="s4">
+  <div class="orb" style="width:580px;height:580px;background:rgba(0,245,255,.05);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+  <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+  <div class="eyebrow rv">рынок</div>
+  <h2 class="hl hl-c gc rv" style="font-size:clamp(1.8rem,4.5vw,4rem)">Момент<br>сейчас.</h2>
+  <div class="stats rv">
+    <div class="stat"><div class="sv" data-val="9" data-suf="B$">—</div><div class="sl">Объём рынка</div></div>
+    <div class="stat"><div class="sv" data-val="370" data-suf="M">—</div><div class="sl">Пользователей</div></div>
+    <div class="stat"><div class="sv" data-val="91" data-suf="%">—</div><div class="sl">Недовольны</div></div>
+  </div>
+  <p class="tag rv" style="margin-bottom:0">Мы строим следующее поколение платформ отношений.<br>Окно возможностей открыто.</p>
+  <div class="snum">05 / 07</div>
+</section>
+
+<!-- ══ S6 INVESTOR ══ -->
+<section class="slide" id="s5">
+  <div class="orb" style="width:480px;height:480px;background:rgba(0,255,156,.05);top:30%;left:50%;transform:translateX(-50%);animation-duration:17s"></div>
+  <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+  <div class="eyebrow rv">для инвесторов</div>
+  <h2 class="hl hl-g gg rv" style="font-size:clamp(1.8rem,4.5vw,4.2rem)">Войдите<br>первыми.</h2>
+  <div class="icards rv">
+    <div class="ic"><div class="ic-n">Pre‑seed</div><div class="ic-l">Минимальная оценка, максимальный потенциал роста</div></div>
+    <div class="ic"><div class="ic-n">MVP ✓</div><div class="ic-l">Продукт готов. Первые пользователи. Данные есть</div></div>
+    <div class="ic"><div class="ic-n">×10</div><div class="ic-l">Целевой рост через 18 месяцев по базовой модели</div></div>
+    <div class="ic"><div class="ic-n">AI‑first</div><div class="ic-l">Уникальная технология без прямых аналогов</div></div>
+  </div>
+  <div class="inv-note rv">Контакт для инвесторов → invest@aimet.app</div>
+  <a href="mailto:invest@aimet.app" class="btn btn-g rv">Обсудить участие</a>
+  <div class="snum">06 / 07</div>
+</section>
+
+<!-- ══ S7 FINAL ══ -->
+<section class="slide" id="s6">
+  <div class="orb" style="width:500px;height:500px;background:rgba(255,0,200,.07);top:10%;left:-10%;animation-duration:13s"></div>
+  <div class="orb" style="width:400px;height:400px;background:rgba(0,245,255,.06);bottom:5%;right:-8%;animation-delay:-6s"></div>
+  <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+  <div class="eyebrow rv">начни прямо сейчас</div>
+  <p class="vision-q rv">"Мы строим инфраструктуру отношений в эпоху ИИ."</p>
+  <h2 class="hl hl-m gm glitch rv" style="font-size:clamp(2.5rem,7vw,6rem);margin-bottom:18px">Начать игру.</h2>
+  <p class="tag rv">Интерактивные сценарии раскрывают то,<br>что не скажет ни один профиль.</p>
+  <a href="https://drive.google.com/file/d/1tBkga_ML_KdBbo7pUAjWnjKGVAqbGAGh/view?usp=sharing" target="_blank" class="btn btn-m rv">Начать игру</a>
+  <div class="snum">07 / 07</div>
+</section>
+
+<script>
+/* ── PARTICLES ── */
+const cvs=document.getElementById('cvs'),ctx=cvs.getContext('2d');
+let W,H,pts=[];
+const resize=()=>{W=cvs.width=innerWidth;H=cvs.height=innerHeight;init()};
+const init=()=>{
+  pts=[];
+  const n=Math.floor(W*H/10000);
+  const cols=['rgba(0,245,255,','rgba(138,92,255,','rgba(255,0,200,'];
+  for(let i=0;i<n;i++) pts.push({
+    x:Math.random()*W,y:Math.random()*H,
+    vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,
+    r:Math.random()*1.5+.3,
+    c:cols[Math.floor(Math.random()*cols.length)],
+    a:Math.random()*.4+.05,
+    pulse:Math.random()*Math.PI*2
+  });
+};
+resize();addEventListener('resize',resize);
+
+let frame=0;
+(function draw(){
+  frame++;
+  ctx.clearRect(0,0,W,H);
+  pts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.pulse+=.02;
+    if(p.x<0)p.x=W;if(p.x>W)p.x=0;
+    if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+    const a=p.a*(0.7+0.3*Math.sin(p.pulse));
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=p.c+a+')';ctx.fill();
+  });
+  // connections (every 2 frames for perf)
+  if(frame%2===0){
+    for(let i=0;i<pts.length;i++){
+      for(let j=i+1;j<pts.length;j++){
+        const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=dx*dx+dy*dy;
+        if(d<14400){
+          ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);
+          ctx.strokeStyle=`rgba(0,245,255,${.05*(1-d/14400)})`;ctx.lineWidth=.4;ctx.stroke();
+        }
+      }
+    }
+  }
+  requestAnimationFrame(draw);
+})();
+
+/* ── DOT NAV ── */
+const slides=document.querySelectorAll('.slide'),dotsEl=document.getElementById('dots');
+slides.forEach((_,i)=>{
+  const d=document.createElement('div');d.className='dot'+(i===0?' active':'');
+  d.onclick=()=>slides[i].scrollIntoView({behavior:'smooth'});
+  dotsEl.appendChild(d);
+});
+const allDots=dotsEl.querySelectorAll('.dot');
+
+/* ── INTERSECTION REVEAL ── */
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting)return;
+    const i=[...slides].indexOf(e.target);
+    allDots.forEach((d,j)=>d.classList.toggle('active',j===i));
+    e.target.querySelectorAll('.rv').forEach((el,k)=>{
+      setTimeout(()=>el.classList.add('in'),k*110);
+    });
+    // counter
+    e.target.querySelectorAll('.sv[data-val]').forEach(el=>{
+      const target=+el.dataset.val,suf=el.dataset.suf||'';
+      let n=0,step=target/55;
+      el.removeAttribute('data-val');
+      const t=setInterval(()=>{n=Math.min(n+step,target);el.textContent=Math.floor(n)+suf;if(n>=target)clearInterval(t)},18);
+    });
+  });
+},{threshold:.25});
+slides.forEach(s=>io.observe(s));
+
+/* ── KEYBOARD NAV ── */
+let cur=0;
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'||e.key==='PageDown')cur=Math.min(cur+1,slides.length-1);
+  if(e.key==='ArrowUp'||e.key==='PageUp')cur=Math.max(cur-1,0);
+  slides[cur].scrollIntoView({behavior:'smooth'});
+});
+</script>
+</body>
+</html>
