@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AiMET</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;700&family=Inter:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0A0F1E;--cyan:#00F5FF;--magenta:#FF00C8;--purple:#8A5CFF;--text:#E6F1FF;--muted:#8B9DC3}
+html{scroll-behavior:smooth;scroll-snap-type:y mandatory}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow-x:hidden;height:100vh;overflow-y:scroll}
+
+/* GRID BG */
+body::after{content:'';position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(0,245,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,.025) 1px,transparent 1px);
+  background-size:64px 64px;pointer-events:none}
+
+/* SLIDE */
+.slide{
+  height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;z-index:1;scroll-snap-align:start;padding:0 24px;text-align:center
+}
+
+/* GLOW ORBS per slide */
+.slide-1::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,245,255,.08) 0%,transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-50%);animation:orb 8s ease-in-out infinite alternate;pointer-events:none}
+.slide-2::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(138,92,255,.1) 0%,transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-50%);animation:orb 10s ease-in-out infinite alternate;pointer-events:none}
+.slide-3::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,0,200,.08) 0%,transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-50%);animation:orb 7s ease-in-out infinite alternate;pointer-events:none}
+@keyframes orb{0%{transform:translate(-55%,-50%) scale(1)}100%{transform:translate(-45%,-50%) scale(1.15)}}
+
+/* LOGO */
+.logo{
+  position:fixed;top:32px;left:50%;transform:translateX(-50%);z-index:100;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.3rem;letter-spacing:.2em;
+  background:linear-gradient(135deg,var(--cyan),var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:float 6s ease-in-out infinite
+}
+@keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-4px)}}
+
+/* DOT NAV */
+.nav-dots{position:fixed;right:32px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:12px}
+.dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:.4s ease}
+.dot.active{background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+
+/* EYEBROW */
+.eyebrow{
+  font-size:.7rem;letter-spacing:.3em;color:var(--cyan);font-family:'Space Grotesk',sans-serif;font-weight:400;
+  text-transform:uppercase;margin-bottom:28px;opacity:.8
+}
+
+/* HEADLINES */
+.headline{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:clamp(3rem,9vw,8rem);letter-spacing:-.01em;line-height:1;
+  margin-bottom:24px
+}
+.headline.grad-1{
+  background:linear-gradient(135deg,var(--text) 0%,var(--cyan) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:glow1 3s ease-in-out infinite alternate
+}
+.headline.grad-2{
+  background:linear-gradient(135deg,var(--text) 0%,var(--purple) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:glow2 3s ease-in-out infinite alternate
+}
+.headline.grad-3{
+  background:linear-gradient(135deg,var(--text) 0%,var(--magenta) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:glow3 3s ease-in-out infinite alternate
+}
+@keyframes glow1{0%{filter:drop-shadow(0 0 0 transparent)}100%{filter:drop-shadow(0 0 30px rgba(0,245,255,.25))}}
+@keyframes glow2{0%{filter:drop-shadow(0 0 0 transparent)}100%{filter:drop-shadow(0 0 30px rgba(138,92,255,.3))}}
+@keyframes glow3{0%{filter:drop-shadow(0 0 0 transparent)}100%{filter:drop-shadow(0 0 30px rgba(255,0,200,.25))}}
+
+/* TAGLINE */
+.tagline{font-size:clamp(.95rem,2vw,1.2rem);color:var(--muted);font-weight:300;line-height:1.6;max-width:480px;margin-bottom:56px}
+
+/* BUTTONS */
+.btn{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem;letter-spacing:.1em;
+  padding:18px 48px;border-radius:60px;cursor:pointer;transition:.4s cubic-bezier(.23,1,.32,1);
+  text-decoration:none;display:inline-block;text-transform:uppercase
+}
+.btn-1{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#0A0F1E;border:none}
+.btn-1:hover{transform:translateY(-4px) scale(1.03);box-shadow:0 16px 50px rgba(0,245,255,.3)}
+.btn-2{background:transparent;color:var(--purple);border:1px solid var(--purple)}
+.btn-2:hover{background:var(--purple);color:#0A0F1E;transform:translateY(-4px);box-shadow:0 16px 50px rgba(138,92,255,.3)}
+.btn-3{background:linear-gradient(135deg,var(--magenta),var(--purple));color:#0A0F1E;border:none}
+.btn-3:hover{transform:translateY(-4px) scale(1.03);box-shadow:0 16px 50px rgba(255,0,200,.3)}
+
+/* SLIDE NUMBER */
+.slide-num{
+  position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
+  font-size:.7rem;letter-spacing:.25em;color:rgba(139,157,195,.3);font-family:'Space Grotesk',sans-serif
+}
+
+/* FADE IN */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s ease}
+.reveal.in{opacity:1;transform:none}
+
+@media(max-width:600px){
+  .nav-dots{right:16px}
+  .btn{padding:16px 36px;font-size:.85rem}
+}
+</style>
+</head>
+<body>
+
+<div class="logo">AiMET</div>
+
+<div class="nav-dots">
+  <div class="dot active" onclick="goTo(0)"></div>
+  <div class="dot" onclick="goTo(1)"></div>
+  <div class="dot" onclick="goTo(2)"></div>
+</div>
+
+<!-- SLIDE 1 -->
+<section class="slide slide-1" id="s0">
+  <div class="eyebrow reveal">Знакомства переосмыслены</div>
+  <div class="headline grad-1 reveal">Не свайпы.<br>Совместимость.</div>
+  <p class="tagline reveal">Искусственный интеллект, который понимает тебя — и находит того, кто подходит.</p>
+  <a href="https://drive.google.com/file/d/1tBkga_ML_KdBbo7pUAjWnjKGVAqbGAGh/view?usp=sharing" target="_blank" class="btn btn-1 reveal">Начать путь</a>
+  <div class="slide-num">01 / 03</div>
+</section>
+
+<!-- SLIDE 2 -->
+<section class="slide slide-2" id="s1">
+  <div class="eyebrow reveal">Технология отношений</div>
+  <div class="headline grad-2 reveal">ИИ<br>внутри.</div>
+  <p class="tagline reveal">Шесть систем анализируют твою личность. Один результат — настоящая связь.</p>
+  <a href="https://drive.google.com/file/d/1tBkga_ML_KdBbo7pUAjWnjKGVAqbGAGh/view?usp=sharing" target="_blank" class="btn btn-2 reveal">Войти в будущее</a>
+  <div class="slide-num">02 / 03</div>
+</section>
+
+<!-- SLIDE 3 -->
+<section class="slide slide-3" id="s2">
+  <div class="eyebrow reveal">Игра меняет всё</div>
+  <div class="headline grad-3 reveal">Познай<br>через игру.</div>
+  <p class="tagline reveal">Интерактивные сценарии раскрывают то, что не скажет ни один профиль.</p>
+  <a href="https://drive.google.com/file/d/1tBkga_ML_KdBbo7pUAjWnjKGVAqbGAGh/view?usp=sharing" target="_blank" class="btn btn-3 reveal">Начать игру</a>
+  <div class="slide-num">03 / 03</div>
+</section>
+
+<script>
+// DOT NAV
+const slides=document.querySelectorAll('.slide'),dots=document.querySelectorAll('.dot');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const i=[...slides].indexOf(e.target);
+      dots.forEach((d,j)=>d.classList.toggle('active',j===i));
+    }
+  })
+},{threshold:.5});
+slides.forEach(s=>obs.observe(s));
+
+// REVEAL
+const rObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const els=e.target.querySelectorAll('.reveal');
+      els.forEach((el,i)=>{el.style.transitionDelay=i*.12+'s';el.classList.add('in')})
+    }
+  })
+},{threshold:.2});
+slides.forEach(s=>rObs.observe(s));
+
+// SMOOTH SCROLL
+function goTo(i){slides[i].scrollIntoView({behavior:'smooth'})}
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'})}
+  })
+})
+</script>
+</body>
+</html>
